@@ -33,7 +33,7 @@ def backup_files(source_dir, backup_dir):
         print(f"[ERROR] Backup failed: {e}")
 
 
-'''if __name__ == "__main__":
+if __name__ == "__main__":
     
     source_directory = r"C:\mini project\test"
     backup_directory = r"C:\mini project\test1"
@@ -41,4 +41,4 @@ def backup_files(source_dir, backup_dir):
     if os.path.exists(source_directory):
         backup_files(source_directory, backup_directory)
     else:
-        print(f"[ERROR] Source directory {source_directory} does not exist.")'''
+        print(f"[ERROR] Source directory {source_directory} does not exist.")
