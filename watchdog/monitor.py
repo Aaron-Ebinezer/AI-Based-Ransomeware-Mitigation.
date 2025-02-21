@@ -8,23 +8,7 @@ from joblib import load
 import pefile
 import math
 from backup import backup_files
-from encryption import encrypt_pe_file
-
-def calculate_entropy(data):
-    if not data:
-        return 0
-    entropy = 0
-    data_size = len(data)
-    freq_dict = {}
-
-    for byte in data:
-        freq_dict[byte] = freq_dict.get(byte, 0) + 1
-
-    for freq in freq_dict.values():
-        p_x = freq / data_size
-        entropy += -p_x * math.log2(p_x)
-
-    return entropy
+from encryption import encrypt_pe_file_inplace
 
 def metadata_extraction(file_path):
     try:
@@ -77,33 +61,22 @@ def detect_ransomware(file_path):
     try:
         all_features = metadata_extraction(file_path)
 
-        if all_features:
-            required_features = [
-                "Machine", "DebugSize", "DebugRVA", "MajorImageVersion", "MajorOSVersion",
-                "ExportRVA", "ExportSize", "IatVRA", "MajorLinkerVersion", "MinorLinkerVersion",
-                "NumberOfSections", "SizeOfStackReserve", "DllCharacteristics", "ResourceSize", "BitcoinAddresses"
-            ]
+        required_features = [
+            "Machine", "DebugSize", "DebugRVA", "MajorImageVersion", "MajorOSVersion",
+            "ExportRVA", "ExportSize", "IatVRA", "MajorLinkerVersion", "MinorLinkerVersion",
+            "NumberOfSections", "SizeOfStackReserve", "DllCharacteristics", "ResourceSize", "BitcoinAddresses"
+        ]
 
-            raw_features = []
-            for key in required_features:
-                value = all_features.get(key, 0)
-                raw_features.append(float(value) if isinstance(value, (int, float, str)) and str(value).replace('.', '', 1).isdigit() else 0.0)
+        raw_features = []
+        for key in required_features:
+            value = all_features.get(key, 0)
+            raw_features.append(float(value) if isinstance(value, (int, float, str)) and str(value).replace('.', '', 1).isdigit() else 0.0)
 
-            model = load(r"AI-Based-Ransomeware-Mitigation\ai_model\svm_model.joblib")
-            prediction = model.predict([raw_features])
-            return "Ransomware" if prediction[0] == 1 else "Benign"
+        model = load(r"AI-Based-Ransomeware-Mitigation\ai_model\svm_model.joblib")
+        prediction = model.predict([raw_features])
+        return "Ransomware" if prediction[0] == 1 else "Benign"
 
-        else:
-            with open(file_path, 'rb') as f:
-                file_data = f.read()
-            entropy = calculate_entropy(file_data)
-            print(f"[INFO] Entropy for {file_path}: {entropy:.2f}")
-
-            if entropy > 6:
-                print(f"[ALERT] High entropy detected! Possible encrypted file: {file_path}")
-                return "Ransomware"
-            else:
-                return "Benign"
+        
 
     except Exception as e:
         print(f"[ERROR] Could not analyze file {file_path}: {e}")
@@ -139,14 +112,13 @@ class RansomwareEventHandler(FileSystemEventHandler):
 
 def start_monitoring(folder_to_monitor):
     input_pe_file = r"C:\mini project\test\minimal.exe"
-    encrypted_file = r"C:\mini project\test\minimal.locked"
     print(f"[INFO] Starting monitoring for {folder_to_monitor}")
     event_handler = RansomwareEventHandler()
     observer = Observer()
     observer.schedule(event_handler, path=folder_to_monitor, recursive=True)
     observer.start()
-
-    encrypt_pe_file(input_pe_file, encrypted_file)
+    #to test this project i am encrypting a file insted of ransomeware
+    encrypt_pe_file_inplace(input_pe_file)
     try:
         while True:
             time.sleep(1)
